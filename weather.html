@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Update</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white p-5 shadow-lg">
+            <h1 class="text-3xl font-bold mb-6">SailSmart</h1>
+            <nav>
+                <a href="dashboard.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg mb-3">
+                    <i class="fas fa-chart-line mr-3"></i> Dashboard
+                </a>
+                <a href="fuel.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg mb-3">
+                    <i class="fa-solid fa-gas-pump mr-3"></i> Fuel Efficiency
+                </a>
+                <a href="weather.html" class="flex items-center p-3 bg-orange-100 text-orange-600 rounded-lg mb-3">
+                    <i class="fa-solid fa-cloud mr-2"></i> Weather Update 
+                </a>
+                <a href="path.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg mb-3">
+                    <i class="fas fa-map mr-3"></i> Path Taken
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <header class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Weather Update</h2>
+            </header>
+            
+            <div id="current-weather" class="bg-white p-5 rounded-lg shadow mb-6">
+                <h3 class="text-xl font-bold">Current Weather</h3>
+                <p id="current-description" class="text-gray-500"></p>
+                <p id="current-temperature" class="text-2xl font-bold"></p>
+            </div>
+
+            <h3 class="text-xl font-bold mb-4">3-Day Forecast</h3>
+            <div id="forecast" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Forecast cards will be populated here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your OpenWeatherMap API key
+        const city = 'YOUR_CITY';
+
+        
+        async function fetchCurrentWeather() {
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
+                if (!response.ok) throw new Error('Failed to fetch weather data');
+                const data = await response.json();
+                document.getElementById('current-description').innerText = data.weather[0].description;
+                document.getElementById('current-temperature').innerText = `${data.main.temp} °C`;
+            } catch (error) {
+                console.error("Error fetching current weather:", error);
+            }
+        }
+
+        
+        async function fetchForecast() {
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`);
+                if (!response.ok) throw new Error('Failed to fetch forecast data');
+                const data = await response.json();
+                const forecastContainer = document.getElementById('forecast');
+                forecastContainer.innerHTML = '';
+                const dailyForecast = {};
+                data.list.forEach(item => {
+                    const date = new Date(item.dt * 1000).toLocaleDateString();
+                    if (!dailyForecast[date]) {
+                        dailyForecast[date] = [];
+                    }
+                    dailyForecast[date].push(item);
+                });
+
+                
+                const dates = Object.keys(dailyForecast).slice(0, 3);
+                dates.forEach(date => {
+                    const dayData = dailyForecast[date];
+                    const avgTemp = dayData.reduce((sum, item) => sum + item.main.temp, 0) / dayData.length;
+                    const description = dayData[0].weather[0].description;
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-5 rounded-lg shadow';
+                    card.innerHTML = `
+                        <h4 class="font-bold">${date}</h4>
+                        <p>${description}</p>
+                        <p class="text-2xl font-bold">${avgTemp.toFixed(1)} °C</p>
+                    `;
+                    forecastContainer.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Error fetching forecast:", error);
+            }
+        }
+
+        async function initWeather() {
+            await fetchCurrentWeather();
+            await fetchForecast();
+        }
+
+        initWeather();
+    </script>
+</body>
+</html>
